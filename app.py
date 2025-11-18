@@ -1,19 +1,17 @@
 """titiler app."""
 
 import json
-import logging
 from logging import config as log_config
 from typing import Annotated, Literal, Optional
 
 import jinja2
 import rasterio
-from fastapi import HTTPException, Path, FastAPI, Query
+from fastapi import FastAPI, Path, Query
 from rio_tiler.io import Reader
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.templating import Jinja2Templates
 from starlette_cramjam.middleware import CompressionMiddleware
-
 from titiler.application import __version__ as titiler_version
 from titiler.application.settings import ApiSettings
 from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers
@@ -31,7 +29,6 @@ from titiler.core.middleware import (
 from titiler.core.models.OGC import Conformance, Landing
 from titiler.core.resources.enums import MediaType
 from titiler.core.utils import accept_media_type, create_html_response, update_openapi
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
 api_settings = ApiSettings()
 
@@ -73,20 +70,12 @@ TITILER_CONFORMS_TO = {
 ###############################################################################
 # TiTiler endpoints
 def DatasetPathParams(
-    dataset_id: Annotated[
-        Literal["coral", "other"],
-        Path(description="Dataset"),
-    ],
+    dataset_id: Annotated[str, Path(description="Dataset")],
     year: Annotated[int, Path(description="Year")],
 ) -> str:
     """Custom Dataset Path Parameter which define dataset_id and year PATH parameter and return a VRT url."""
-    name: str
-    if dataset_id == "coral":
-        name = "nbgi_clipped"
-    elif dataset_id == "other":
-        raise HTTPException(status_code=404, detail="Not Found.")
 
-    return f"https://syd1.digitaloceanspaces.com/mis-geotiff-storage/production/raster/{name}_{year}.vrt"
+    return f"https://syd1.digitaloceanspaces.com/mis-geotiff-storage/production/raster/{dataset_id}_{year}.vrt"
 
 
 tiler = TilerFactory(
